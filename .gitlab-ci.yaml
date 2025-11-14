@@ -1,0 +1,47 @@
+image: docker:latest
+
+services:
+  - docker:dind
+
+variables:
+  DOCKER_DRIVER: overlay2
+  IMAGE_NAME: "vinicius994/multiplataforma"
+
+stages:
+  - build
+  - docker_build
+  - docker_push
+
+build_app:
+  stage: build
+  script:
+    - echo "Instalando dependências Node.js"
+    - apk add --no-cache nodejs npm
+    - npm install
+  artifacts:
+    paths:
+      - node_modules/
+    expire_in: 1 hour
+
+docker_build:
+  stage: docker_build
+  script:
+    - echo "Login no Docker Hub"
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+    - echo "Construindo imagem Docker"
+    - docker build -t $IMAGE_NAME:latest .
+  dependencies:
+    - build_app
+
+docker_push:
+  stage: docker_push
+  script:
+    - echo "Login no Docker Hub"
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+    - echo "Enviando imagem"
+    - docker push $IMAGE_NAME:latest
+  dependencies:
+    - docker_build
+  only:
+    - main
+

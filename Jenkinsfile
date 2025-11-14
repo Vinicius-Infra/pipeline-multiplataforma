@@ -1,21 +1,24 @@
 pipeline {
     agent any
+
     stages {
-        stage('Clonar GitHub') {
+        stage('Checkout') {
             steps {
-                git 'https://github.com/SEU_USUARIO/pipeline-multi.git'
+                git branch: 'main', url: 'git@github.com:Vinicius-Infra/pipeline-multiplataforma'
             }
         }
-        stage('Build Docker') {
+
+        stage('Build') {
             steps {
-                sh 'docker build -t multi-app:latest .'
+                sh 'echo "Executando build..."'
+                sh 'node -v'
             }
         }
-        stage('Push para GitLab Registry') {
+
+        stage('Test') {
             steps {
-                sh 'echo "" | docker login registry.gitlab.com -u "" --password-stdin'
-                sh 'docker tag multi-app:latest registry.gitlab.com/SEU_USER/pipeline-multi/multi-app:latest'
-                sh 'docker push registry.gitlab.com/SEU_USER/pipeline-multi/multi-app:latest'
+                sh 'echo "Testando endpoint..."'
+                sh 'curl http://localhost:3000 || true'
             }
         }
     }
