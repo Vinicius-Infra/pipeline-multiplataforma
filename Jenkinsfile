@@ -1,46 +1,25 @@
 pipeline {
     agent any
 
-    environment {
-        GIT_REPO = 'git@github.com:Vinicius-Infra/pipeline-multi.git'
-        IMAGE_NAME = 'multi-app:latest'
-        GITLAB_REGISTRY = 'registry.gitlab.com'
-        GITLAB_IMAGE = 'registry.gitlab.com/SEU_GITLAB_USER/SEU_REPO/multi-app:latest'
-        GITLAB_CRED = 'gitlab-registry'  // ID da credencial criada no Jenkins
-    }
-
     stages {
-
-        stage('Checkout GitHub') {
+        stage('Clonar Projeto') {
             steps {
-                git url: "${GIT_REPO}", branch: 'main', credentialsId: 'github-ssh'
+                git 'https://github.com/Vinicius-Infra/pipeline-multiplataforma.git'
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Build Docker') {
             steps {
-                sh """
-                    docker build -t ${IMAGE_NAME} .
-                """
+                sh 'docker build -t vinicius994/pipeline-multiplataforma:latest .'
             }
         }
 
-        stage('Login no GitLab Registry') {
+        stage('Push para Docker Hub') {
             steps {
-                withCredentials([usernamePassword(credentialsId: "${GITLAB_CRED}", usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-                    sh """
-                        echo "$PASS" | docker login ${GITLAB_REGISTRY} -u "$USER" --password-stdin
-                    """
+                withCredentials([string(credentialsId: 'dockerhub-token', variable: 'TOKEN')]) {
+                    sh 'echo $TOKEN | docker login -u "vinicius994" --password-stdin'
+                    sh 'docker push vinicius994/pipeline-multiplataforma:latest'
                 }
-            }
-        }
-
-        stage('Push para GitLab Registry') {
-            steps {
-                sh """
-                    docker tag ${IMAGE_NAME} ${GITLAB_IMAGE}
-                    docker push ${GITLAB_IMAGE}
-                """
             }
         }
     }
